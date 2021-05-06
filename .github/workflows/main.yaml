@@ -1,0 +1,21 @@
+on: 
+  push:
+    branches: master
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    name: Deploy
+    steps:
+      - uses: actions/checkout@v2
+      - name: install
+        run: npm run install
+      - name: build
+        run: npm run build 
+      - name: RoamJS Publish
+        uses: dvargas92495/roamjs-publish@0.2.0
+        with:
+          token: ${{ secrets.ROAMJS_DEVELOPER_TOKEN }}
+          source: dist
+          path: relay-game
+          release_token: ${{ secrets.ROAMJS_RELEASE_TOKEN }}
