@@ -1,0 +1,30 @@
+{
+  "name": "relay-game",
+  "version": "1.0.0",
+  "description": "Relay Problem Solving in Roam",
+  "main": "./build/relay-game.js",
+  "dependencies": {
+    "roam-client": "^1.55.2",
+    "typescript": "^4.2.4"
+  },
+  "devDependencies": {
+    "roamjs-scripts": "^0.2.14"
+  },
+  "scripts": {
+    "test": "echo 'No Tests'",
+    "build": "roamjs-scripts build"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dvargas92495/roamjs-relay-game.git"
+  },
+  "keywords": [
+    "RoamJS"
+  ],
+  "author": "dvargas92495 <dvargas92495@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/dvargas92495/roamjs-relay-game/issues"
+  },
+  "homepage": "https://github.com/dvargas92495/roamjs-relay-game#readme"
+}
