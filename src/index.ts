@@ -34,5 +34,5 @@ createButtonObserver({
 
 window.roamAlphaAPI.ui.commandPalette.addCommand({
   label: "Create Relay Game",
-  callback: gameDialogRender,
+  callback: () => gameDialogRender({}),
 });
