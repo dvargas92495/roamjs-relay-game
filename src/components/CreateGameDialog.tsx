@@ -28,6 +28,7 @@ const CreateGameDialog = ({ onClose }: { onClose: () => void }) => {
           placeholder={"Enter name of game..."}
           value={pageName}
           onChange={(e) => setPageName((e.target as HTMLInputElement).value)}
+          autoFocus
         />
         <span style={{ color: "darkred" }}>{error}</span>
       </div>
@@ -55,6 +56,7 @@ const CreateGameDialog = ({ onClose }: { onClose: () => void }) => {
                   ],
                 });
                 setLoading(false);
+                onClose();
               }, 1);
             }}
             intent={Intent.PRIMARY}

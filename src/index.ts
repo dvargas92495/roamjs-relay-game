@@ -2,11 +2,14 @@ import {
   createButtonObserver,
   createBlock,
   createPage,
+  getBlockUidAndTextIncludingText,
+  getCurrentUserEmail,
   getShallowTreeByParentUid,
   getPageUidByPageTitle,
 } from "roam-client";
 import { render } from "./components/RelayGameButton";
 import { render as gameDialogRender } from "./components/CreateGameDialog";
+import { render as playerAlertRender } from "./components/CreatePlayerAlert";
 
 const lobbyUid =
   getPageUidByPageTitle("Lobby") || createPage({ title: "Lobby" });
@@ -27,12 +30,18 @@ setTimeout(() => {
 createButtonObserver({
   shortcut: "relay",
   attribute: "relay game",
-  render: (b: HTMLButtonElement) => {
-    render({ parent: b.parentElement });
-  },
+  render,
 });
 
 window.roamAlphaAPI.ui.commandPalette.addCommand({
   label: "Create Relay Game",
   callback: () => gameDialogRender({}),
 });
+
+const userEmail = getCurrentUserEmail();
+const blocksWithEmail = getBlockUidAndTextIncludingText(
+  userEmail
+).filter(({ text }) => /^Email::/.test(text));
+if (!blocksWithEmail.length) {
+  playerAlertRender({email: userEmail});
+}
