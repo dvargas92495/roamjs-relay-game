@@ -1,5 +1,12 @@
 import React, { useMemo, useState } from "react";
-import { Card, Button, Label, InputGroup } from "@blueprintjs/core";
+import {
+  Card,
+  Button,
+  Label,
+  Icon,
+  InputGroup,
+  NumericInput,
+} from "@blueprintjs/core";
 import { createComponentRender, MenuItemSelect } from "roamjs-components";
 import { getPageTitleReferencesByPageTitle } from "roam-client";
 
@@ -10,6 +17,8 @@ const RelayGameButton = () => {
     []
   );
   const [activeItem, setActiveItem] = useState(items[0]);
+  const [showAdditionalOptions, setShowAdditionalOptions] = useState(false);
+  const [timeLimit, setTimeLimit] = useState(10);
   return (
     <Card>
       <Label>
@@ -27,7 +36,25 @@ const RelayGameButton = () => {
           onItemSelect={(s) => setActiveItem(s)}
         />
       </Label>
-      <Button>Start Game</Button>
+      <div
+        onClick={() => setShowAdditionalOptions(!showAdditionalOptions)}
+        style={{ cursor: "pointer", color: "darkblue" }}
+      >
+        <Icon icon={showAdditionalOptions ? "caret-down" : "caret-right"} />{" "}
+        {showAdditionalOptions ? "Hide" : "Show"} Additional Options
+      </div>
+      {showAdditionalOptions && (
+        <div>
+          <Label>
+            Time Limit Per Player (minutes)
+            <NumericInput
+              value={timeLimit}
+              onValueChange={(n) => setTimeLimit(n)}
+            />
+          </Label>
+        </div>
+      )}
+      <Button style={{ marginTop: 16 }} text={"Start Game"} disabled={!gameLabel} />
     </Card>
   );
 };

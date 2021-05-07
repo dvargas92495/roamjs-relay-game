@@ -29,7 +29,7 @@ setTimeout(() => {
 
 createButtonObserver({
   shortcut: "relay",
-  attribute: "relay game",
+  attribute: "relay-game",
   render,
 });
 
