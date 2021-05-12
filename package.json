@@ -2,13 +2,13 @@
   "name": "relay-game",
   "version": "1.0.0",
   "description": "Relay Problem Solving in Roam",
-  "main": "./build/relay-game.js",
+  "main": "./build/main.js",
   "dependencies": {
     "@blueprintjs/core": "^3.44.2",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
-    "roam-client": "^1.60.0",
-    "roamjs-components": "^0.6.0",
+    "roam-client": "^1.63.0",
+    "roamjs-components": "^0.10.2",
     "typescript": "^4.2.4"
   },
   "devDependencies": {
@@ -33,5 +33,5 @@
   "bugs": {
     "url": "https://github.com/dvargas92495/roamjs-relay-game/issues"
   },
-  "homepage": "https://github.com/dvargas92495/roamjs-relay-game#readme"
+  "homepage": "https://roamjs.com/extensions/relay-game"
 }

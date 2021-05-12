@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { Children, useMemo, useState } from "react";
 import {
   Card,
   Button,
@@ -6,34 +6,92 @@ import {
   Icon,
   InputGroup,
   NumericInput,
+  Spinner,
+  SpinnerSize,
+  Intent,
 } from "@blueprintjs/core";
-import { createComponentRender, MenuItemSelect } from "roamjs-components";
-import { getPageTitleReferencesByPageTitle } from "roam-client";
+import {
+  addInputSetting,
+  createComponentRender,
+  getSettingIntFromTree,
+  getSettingValueFromTree,
+  MenuItemSelect,
+  setInputSetting,
+} from "roamjs-components";
+import {
+  createPage,
+  deleteBlock,
+  extractTag,
+  getCurrentUserEmail,
+  getDisplayNameByEmail,
+  getPageTitleReferencesByPageTitle,
+  getPageTitlesReferencingBlockUid,
+  getPageUidByPageTitle,
+  getRoamUrl,
+  getTreeByBlockUid,
+  getTreeByPageName,
+} from "roam-client";
 
-const RelayGameButton = () => {
-  const [gameLabel, setGameLabel] = useState("");
+type GameState = "ACTIVE" | "NONE" | "COMPLETE";
+
+const RelayGameButton = ({ blockUid }: { blockUid: string }) => {
+  const email = getCurrentUserEmail();
+  const displayName = getDisplayNameByEmail(email) || email;
+  const tree = getTreeByBlockUid(blockUid).children;
+  const [gameLabel, setGameLabel] = useState(
+    getSettingValueFromTree({ tree, key: "label" })
+  );
   const items = useMemo(
     () => getPageTitleReferencesByPageTitle("Relay Game"),
     []
   );
-  const [activeItem, setActiveItem] = useState(items[0]);
+  const [activeGame, setActiveGame] = useState(
+    getSettingValueFromTree({ tree, key: "game", defaultValue: items[0] })
+  );
   const [showAdditionalOptions, setShowAdditionalOptions] = useState(false);
-  const [timeLimit, setTimeLimit] = useState(10);
+  const [timeLimit, setTimeLimit] = useState(
+    getSettingIntFromTree({ tree, key: "time", defaultValue: 10 })
+  );
+  const state: GameState = getPageTitlesReferencingBlockUid(blockUid).some(
+    (title) => title === gameLabel
+  )
+    ? (getSettingValueFromTree({
+        tree: getTreeByPageName(gameLabel),
+        key: "state",
+      }) as GameState)
+    : "NONE";
+  const [joinedUid, setJoinedUid] = useState(
+    (tree.find((t) => /players/i.test(t.text))?.children || []).find(
+      (s) => extractTag(s.text) === displayName
+    )?.uid
+  );
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
   return (
     <Card>
       <Label>
         Game Instance Label
         <InputGroup
           value={gameLabel}
-          onChange={(e) => setGameLabel((e.target as HTMLInputElement).value)}
+          disabled={state === "ACTIVE"}
+          onChange={(e) => {
+            setError("");
+            const value = (e.target as HTMLInputElement).value;
+            setGameLabel(value);
+            setInputSetting({ blockUid, value, key: "label" });
+          }}
         />
       </Label>
       <Label>
-        Games
+        Game
         <MenuItemSelect
-          activeItem={activeItem}
+          disabled={state === "ACTIVE"}
+          activeItem={activeGame}
           items={items}
-          onItemSelect={(s) => setActiveItem(s)}
+          onItemSelect={(value) => {
+            setActiveGame(value);
+            setInputSetting({ blockUid, value, key: "game" });
+          }}
         />
       </Label>
       <div
@@ -48,13 +106,141 @@ const RelayGameButton = () => {
           <Label>
             Time Limit Per Player (minutes)
             <NumericInput
+              disabled={state === "ACTIVE"}
               value={timeLimit}
-              onValueChange={(n) => setTimeLimit(n)}
+              onValueChange={(n, value) => {
+                setTimeLimit(n);
+                setInputSetting({ blockUid, value, key: "time" });
+              }}
             />
           </Label>
         </div>
       )}
-      <Button style={{ marginTop: 16 }} text={"Start Game"} disabled={!gameLabel} />
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          marginTop: 16,
+        }}
+      >
+        {joinedUid ? (
+          <Button
+            text={"Leave"}
+            onClick={() => {
+              deleteBlock(joinedUid);
+              setJoinedUid("");
+            }}
+            intent={Intent.DANGER}
+          />
+        ) : (
+          <Button
+            text={"Join"}
+            onClick={() => {
+              setJoinedUid(
+                addInputSetting({
+                  blockUid,
+                  value: `[[${displayName}]]`,
+                  key: "players",
+                })
+              );
+            }}
+            intent={Intent.SUCCESS}
+          />
+        )}
+        <div style={{ display: "flex" }}>
+          {loading && <Spinner size={SpinnerSize.SMALL} />}
+          <Button
+            text={"Start Game"}
+            disabled={!gameLabel || state === "ACTIVE"}
+            intent={Intent.PRIMARY}
+            style={{ marginLeft: 16 }}
+            onClick={() => {
+              if (getPageUidByPageTitle(gameLabel)) {
+                setError(
+                  `There already exists a page with ${gameLabel}. Please pick a different label.`
+                );
+                return;
+              }
+              setLoading(true);
+              setTimeout(() => {
+                if (!joinedUid) {
+                  setJoinedUid(
+                    addInputSetting({
+                      blockUid,
+                      value: `[[${displayName}]]`,
+                      key: "players",
+                    })
+                  );
+                }
+                const pageUid = createPage({
+                  title: gameLabel,
+                  tree: [
+                    {
+                      text: `#[[${activeGame}]]`,
+                    },
+                    {
+                      text: "Launched From",
+                      children: [
+                        {
+                          text: `((${blockUid}))`,
+                        },
+                      ],
+                    },
+                    {
+                      text: "State",
+                      children: [{ text: "ACTIVE" }],
+                    },
+                    {
+                      text: "Start Time",
+                      children: [{ text: new Date().toISOString() }],
+                    },
+                    {
+                      text: "Current Player",
+                      children: [
+                        {
+                          text: `[[${displayName}]]`,
+                        },
+                      ],
+                    },
+                    {
+                      text: "Problem",
+                      children: [
+                        {
+                          text: "Get Problem from active game somehow",
+                        },
+                      ],
+                    },
+                    {
+                      text: "Timer",
+                      children: [{ text: "{{timer}}" }],
+                    },
+                    {
+                      text: "Notes",
+                      children: [
+                        {
+                          text: "Start work here...",
+                        },
+                      ],
+                    },
+                    {
+                      text: "Answer",
+                      children: [
+                        {
+                          text: "Add answer here...",
+                        },
+                      ],
+                    },
+                  ],
+                });
+                setTimeout(() => {
+                  window.location.assign(getRoamUrl(pageUid));
+                }, 50);
+              }, 1);
+            }}
+          />
+        </div>
+      </div>
+      <span style={{ color: "darkred" }}>{error}</span>
     </Card>
   );
 };

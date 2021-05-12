@@ -9,7 +9,7 @@ import {
   SpinnerSize,
 } from "@blueprintjs/core";
 import { createOverlayRender } from "roamjs-components";
-import { createPage, getPageUidByPageTitle } from "roam-client";
+import { createPage, getPageUidByPageTitle, getRoamUrl } from "roam-client";
 
 const CreateGameDialog = ({ onClose }: { onClose: () => void }) => {
   const [pageName, setPageName] = useState("");
@@ -47,7 +47,7 @@ const CreateGameDialog = ({ onClose }: { onClose: () => void }) => {
                   setLoading(false);
                   return;
                 }
-                createPage({
+                const uid = createPage({
                   title: pageName,
                   tree: [
                     {
@@ -55,8 +55,11 @@ const CreateGameDialog = ({ onClose }: { onClose: () => void }) => {
                     },
                   ],
                 });
-                setLoading(false);
-                onClose();
+                setTimeout(() => {
+                  window.location.assign(getRoamUrl(uid));
+                  setLoading(false);
+                  onClose();
+                }, 50);
               }, 1);
             }}
             intent={Intent.PRIMARY}
