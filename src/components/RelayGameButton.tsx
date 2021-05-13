@@ -31,6 +31,7 @@ import {
   getTreeByBlockUid,
   getTreeByPageName,
 } from "roam-client";
+import axios from "axios";
 
 type GameState = "ACTIVE" | "NONE" | "COMPLETE";
 
@@ -151,7 +152,7 @@ const RelayGameButton = ({ blockUid }: { blockUid: string }) => {
           {loading && <Spinner size={SpinnerSize.SMALL} />}
           <Button
             text={"Start Game"}
-            disabled={!gameLabel || state === "ACTIVE"}
+            disabled={!gameLabel || state === "ACTIVE" || loading}
             intent={Intent.PRIMARY}
             style={{ marginLeft: 16 }}
             onClick={() => {
@@ -172,69 +173,81 @@ const RelayGameButton = ({ blockUid }: { blockUid: string }) => {
                     })
                   );
                 }
-                const pageUid = createPage({
-                  title: gameLabel,
-                  tree: [
-                    {
-                      text: `#[[${activeGame}]]`,
-                    },
-                    {
-                      text: "Launched From",
-                      children: [
-                        {
-                          text: `((${blockUid}))`,
-                        },
-                      ],
-                    },
-                    {
-                      text: "State",
-                      children: [{ text: "ACTIVE" }],
-                    },
-                    {
-                      text: "Start Time",
-                      children: [{ text: new Date().toISOString() }],
-                    },
-                    {
-                      text: "Current Player",
-                      children: [
-                        {
-                          text: `[[${displayName}]]`,
-                        },
-                      ],
-                    },
-                    {
-                      text: "Problem",
-                      children: [
-                        {
-                          text: "Get Problem from active game somehow",
-                        },
-                      ],
-                    },
-                    {
-                      text: "Timer",
-                      children: [{ text: "{{timer}}" }],
-                    },
-                    {
-                      text: "Notes",
-                      children: [
-                        {
-                          text: "Start work here...",
-                        },
-                      ],
-                    },
-                    {
-                      text: "Answer",
-                      children: [
-                        {
-                          text: "Add answer here...",
-                        },
-                      ],
-                    },
-                  ],
+                const gameTree = getTreeByPageName(activeGame);
+                const source = getSettingValueFromTree({
+                  tree: gameTree,
+                  key: "Source",
                 });
-                setTimeout(() => {
-                  window.location.assign(getRoamUrl(pageUid));
-                }, 50);
+                (source
+                  ? axios.get(source).then((r) => r.data.project as string)
+                  : Promise.resolve(
+                      "Add a source to this relay game to populate the problem"
+                    )
+                ).then((problem) => {
+                  const pageUid = createPage({
+                    title: gameLabel,
+                    tree: [
+                      {
+                        text: `#[[${activeGame}]]`,
+                      },
+                      {
+                        text: "Launched From",
+                        children: [
+                          {
+                            text: `((${blockUid}))`,
+                          },
+                        ],
+                      },
+                      {
+                        text: "State",
+                        children: [{ text: "ACTIVE" }],
+                      },
+                      {
+                        text: "Start Time",
+                        children: [{ text: new Date().toISOString() }],
+                      },
+                      {
+                        text: "Current Player",
+                        children: [
+                          {
+                            text: `[[${displayName}]]`,
+                          },
+                        ],
+                      },
+                      {
+                        text: "Problem",
+                        children: [
+                          {
+                            text: problem,
+                          },
+                        ],
+                      },
+                      {
+                        text: "Timer",
+                        children: [{ text: "{{timer}}" }],
+                      },
+                      {
+                        text: "Notes",
+                        children: [
+                          {
+                            text: "Start work here...",
+                          },
+                        ],
+                      },
+                      {
+                        text: "Answer",
+                        children: [
+                          {
+                            text: "Add answer here...",
+                          },
+                        ],
+                      },
+                    ],
+                  });
+                  setTimeout(() => {
+                    window.location.assign(getRoamUrl(pageUid));
+                  }, 50);
+                });
               }, 1);
             }}
           />

@@ -14,7 +14,8 @@
   "devDependencies": {
     "@types/react": "^17.0.5",
     "@types/react-dom": "^17.0.3",
-    "roamjs-scripts": "^0.3.13"
+    "aws-lambda": "^1.0.6",
+    "roamjs-scripts": "^0.5.4"
   },
   "scripts": {
     "test": "echo 'No Tests'",
