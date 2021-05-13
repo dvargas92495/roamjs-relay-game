@@ -37,15 +37,15 @@ provider "aws" {
 }
 
 provider "github" {
-    owner = "dvargas92495"
-    token = var.github_token
+  owner = "dvargas92495"
+  token = var.github_token
 }
 
 module "roamjs_lambda" {
   source = "dvargas92495/lambda/roamjs"
 
   name = "relay-game"
-  paths = [
+  lambdas = [
     { 
       path = "relay-game", 
       method = "post"
