@@ -51,8 +51,8 @@ module "roamjs_lambda" {
   name = "relay-game"
   lambdas = [
     { 
-      path = "relay-game", 
-      method = "post"
+      path = "relay-euler", 
+      method = "get"
     },
   ]
   aws_access_token = var.aws_access_token
