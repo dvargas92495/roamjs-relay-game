@@ -10,11 +10,20 @@ import {
   SpinnerSize,
 } from "@blueprintjs/core";
 import { createOverlayRender } from "roamjs-components";
-import { createPage, getPageUidByPageTitle, getRoamUrl } from "roam-client";
+import {
+  createBlock,
+  createPage,
+  deleteBlock,
+  getPageUidByPageTitle,
+  getRoamUrl,
+  getTextByBlockUid,
+} from "roam-client";
 
 const CreateGameDialog = ({ onClose }: { onClose: () => void }) => {
   const [pageName, setPageName] = useState("");
   const [source, setSource] = useState("");
+  const [newParameter, setNewParameter] = useState("");
+  const [parameters, setParameters] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   return (
@@ -43,6 +52,40 @@ const CreateGameDialog = ({ onClose }: { onClose: () => void }) => {
             onChange={(e) => setSource((e.target as HTMLInputElement).value)}
           />
         </Label>{" "}
+        <Label>
+          Parameters
+          <ul>
+            {parameters.map((p) => (
+              <li
+                key={p}
+                style={{ display: "flex", justifyContent: "space-between" }}
+              >
+                <span>{p}</span>
+                <Button
+                  icon={"trash"}
+                  minimal
+                  onClick={() =>
+                    setParameters(parameters.filter((pm) => pm !== p))
+                  }
+                />
+              </li>
+            ))}
+          </ul>
+          <div>
+            <InputGroup
+              placeholder={"Parameter Name"}
+              value={newParameter}
+              onChange={(e) =>
+                setNewParameter((e.target as HTMLInputElement).value)
+              }
+            />
+            <Button
+              text="+ Add Parameter"
+              disabled={!newParameter || parameters.includes(newParameter)}
+              onClick={() => setParameters([...parameters, newParameter])}
+            />
+          </div>
+        </Label>
       </div>
       <div className={Classes.DIALOG_FOOTER}>
         <span style={{ color: "darkred" }}>{error}</span>
@@ -70,6 +113,10 @@ const CreateGameDialog = ({ onClose }: { onClose: () => void }) => {
                       text: "Source",
                       children: [{ text: source }],
                     },
+                    {
+                      text: "Parameters",
+                      children: parameters.map(text => ({text})),
+                    }
                   ],
                 });
                 setTimeout(() => {

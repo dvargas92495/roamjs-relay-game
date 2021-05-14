@@ -15,6 +15,7 @@ import {
   createComponentRender,
   getSettingIntFromTree,
   getSettingValueFromTree,
+  getSettingValuesFromTree,
   MenuItemSelect,
   setInputSetting,
 } from "roamjs-components";
@@ -68,6 +69,15 @@ const RelayGameButton = ({ blockUid }: { blockUid: string }) => {
   );
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const parameters = useMemo(
+    () =>
+      getSettingValuesFromTree({
+        tree: getTreeByPageName(activeGame),
+        key: "parameters",
+      }),
+    [activeGame]
+  );
+  const [parameterMap, setParameterMap] = useState<Record<string, string>>({});
   return (
     <Card>
       <Label>
@@ -95,6 +105,25 @@ const RelayGameButton = ({ blockUid }: { blockUid: string }) => {
           }}
         />
       </Label>
+      {!!parameters.length && (
+        <Label>
+          Game Parameters{" "}
+          <div>
+            {parameters.map((p) => (
+              <InputGroup
+                key={p}
+                placeholder={p}
+                value={parameterMap[p]}
+                disabled={state === "ACTIVE"}
+                onChange={(e) => {
+                  const value = (e.target as HTMLInputElement).value;
+                  setParameterMap({ ...parameterMap, [p]: value });
+                }}
+              />
+            ))}
+          </div>
+        </Label>
+      )}
       <div
         onClick={() => setShowAdditionalOptions(!showAdditionalOptions)}
         style={{ cursor: "pointer", color: "darkblue" }}
@@ -179,7 +208,18 @@ const RelayGameButton = ({ blockUid }: { blockUid: string }) => {
                   key: "Source",
                 });
                 (source
-                  ? axios.get(source).then((r) => r.data.project as string)
+                  ? axios
+                      .get(
+                        parameters.reduce(
+                          (prev, cur) =>
+                            prev.replace(
+                              new RegExp(`{${cur.toLowerCase()}}`),
+                              parameterMap[cur]
+                            ),
+                          source
+                        )
+                      )
+                      .then((r) => r.data.project as string)
                   : Promise.resolve(
                       "Add a source to this relay game to populate the problem"
                     )

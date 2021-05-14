@@ -1,7 +1,7 @@
 import { APIGatewayProxyHandler } from "aws-lambda";
 import axios from "axios";
 
-const REGEX = /<div class="problem_content" role="problem">(.*?)<\/div>/;
+const REGEX = /<div class="problem_content" role="problem">(.*?)<\/div>/s;
 
 export const handler: APIGatewayProxyHandler = (event) => {
   const id = event.queryStringParameters?.problem;
@@ -16,7 +16,7 @@ export const handler: APIGatewayProxyHandler = (event) => {
       return {
         statusCode: 200,
         body: JSON.stringify({
-          problem: REGEX.exec(r.data)?.[1],
+          problem: (REGEX.exec(r.data)?.[1] || "").replace(/<(\/)?p>/g, ""),
         }),
         headers: {
           "Access-Control-Allow-Origin": "https://roamresearch.com",
