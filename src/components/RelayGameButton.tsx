@@ -20,6 +20,7 @@ import {
   setInputSetting,
 } from "roamjs-components";
 import {
+  createBlock,
   createPage,
   deleteBlock,
   extractTag,
@@ -101,7 +102,7 @@ const RelayGameButton = ({ blockUid }: { blockUid: string }) => {
           items={items}
           onItemSelect={(value) => {
             setActiveGame(value);
-            setInputSetting({ blockUid, value, key: "game" });
+            setInputSetting({ blockUid, value, key: "game", index: 1 });
           }}
         />
       </Label>
@@ -109,15 +110,32 @@ const RelayGameButton = ({ blockUid }: { blockUid: string }) => {
         <Label>
           Game Parameters{" "}
           <div>
-            {parameters.map((p) => (
+            {parameters.map((p, i) => (
               <InputGroup
                 key={p}
                 placeholder={p}
                 value={parameterMap[p]}
                 disabled={state === "ACTIVE"}
                 onChange={(e) => {
+                  const parentUid =
+                    getTreeByBlockUid(blockUid).children.find((t) =>
+                      /parameters/i.test(t.text)
+                    )?.uid ||
+                    createBlock({
+                      node: { text: "Parameters" },
+                      parentUid: blockUid,
+                      order: 2,
+                    });
                   const value = (e.target as HTMLInputElement).value;
                   setParameterMap({ ...parameterMap, [p]: value });
+                  setTimeout(() =>
+                    setInputSetting({
+                      blockUid: parentUid,
+                      value,
+                      key: p,
+                      index: i,
+                    })
+                  );
                 }}
               />
             ))}
@@ -219,7 +237,9 @@ const RelayGameButton = ({ blockUid }: { blockUid: string }) => {
                           source
                         )
                       )
-                      .then((r) => r.data.project as string)
+                      .then(
+                        (r) => r.data.problem || ("No Problem Found" as string)
+                      )
                   : Promise.resolve(
                       "Add a source to this relay game to populate the problem"
                     )

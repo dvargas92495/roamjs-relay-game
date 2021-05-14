@@ -16,7 +16,9 @@ export const handler: APIGatewayProxyHandler = (event) => {
       return {
         statusCode: 200,
         body: JSON.stringify({
-          problem: (REGEX.exec(r.data)?.[1] || "").replace(/<(\/)?p>/g, ""),
+          problem: (REGEX.exec(r.data)?.[1] || "")
+            .replace(/<(\/)?p>/g, "")
+            .trim(),
         }),
         headers: {
           "Access-Control-Allow-Origin": "https://roamresearch.com",
