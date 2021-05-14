@@ -24,8 +24,6 @@ import {
   createPage,
   deleteBlock,
   extractTag,
-  getCurrentUserEmail,
-  getDisplayNameByEmail,
   getPageTitleReferencesByPageTitle,
   getPageTitlesReferencingBlockUid,
   getPageUidByPageTitle,
@@ -34,12 +32,12 @@ import {
   getTreeByPageName,
 } from "roam-client";
 import axios from "axios";
+import { getPlayerName } from "../util/helpers";
 
 type GameState = "ACTIVE" | "NONE" | "COMPLETE";
 
 const RelayGameButton = ({ blockUid }: { blockUid: string }) => {
-  const email = getCurrentUserEmail();
-  const displayName = getDisplayNameByEmail(email) || email;
+  const displayName = useMemo(getPlayerName, []);
   const tree = getTreeByBlockUid(blockUid).children;
   const [gameLabel, setGameLabel] = useState(
     getSettingValueFromTree({ tree, key: "label" })
@@ -114,7 +112,7 @@ const RelayGameButton = ({ blockUid }: { blockUid: string }) => {
               <InputGroup
                 key={p}
                 placeholder={p}
-                value={parameterMap[p]}
+                value={parameterMap[p] || ""}
                 disabled={state === "ACTIVE"}
                 onChange={(e) => {
                   const parentUid =
@@ -160,6 +158,7 @@ const RelayGameButton = ({ blockUid }: { blockUid: string }) => {
                 setTimeLimit(n);
                 setInputSetting({ blockUid, value, key: "time" });
               }}
+              min={1}
             />
           </Label>
         </div>
@@ -188,7 +187,7 @@ const RelayGameButton = ({ blockUid }: { blockUid: string }) => {
                 addInputSetting({
                   blockUid,
                   value: `[[${displayName}]]`,
-                  key: "players",
+                  key: "Players",
                 })
               );
             }}
@@ -216,7 +215,7 @@ const RelayGameButton = ({ blockUid }: { blockUid: string }) => {
                     addInputSetting({
                       blockUid,
                       value: `[[${displayName}]]`,
-                      key: "players",
+                      key: "Players",
                     })
                   );
                 }
@@ -240,8 +239,14 @@ const RelayGameButton = ({ blockUid }: { blockUid: string }) => {
                       .then(
                         (r) => r.data.problem || ("No Problem Found" as string)
                       )
-                  : Promise.resolve(
-                      "Add a source to this relay game to populate the problem"
+                  : new Promise((resolve) =>
+                      setTimeout(
+                        () =>
+                          resolve(
+                            "Add a source to this relay game to populate the problem"
+                          ),
+                        500
+                      )
                     )
                 ).then((problem) => {
                   const pageUid = createPage({
@@ -270,7 +275,12 @@ const RelayGameButton = ({ blockUid }: { blockUid: string }) => {
                         text: "Current Player",
                         children: [
                           {
-                            text: `[[${displayName}]]`,
+                            text: `[[${extractTag(
+                              getSettingValuesFromTree({
+                                tree: getTreeByPageName(activeGame),
+                                key: "Players",
+                              })[0]
+                            )}]]`,
                           },
                         ],
                       },
@@ -283,8 +293,8 @@ const RelayGameButton = ({ blockUid }: { blockUid: string }) => {
                         ],
                       },
                       {
-                        text: "Timer",
-                        children: [{ text: "{{timer}}" }],
+                        text: "{{stopwatch}}",
+                        children: [],
                       },
                       {
                         text: "Notes",

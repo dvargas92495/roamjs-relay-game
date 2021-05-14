@@ -11,12 +11,9 @@ import {
 } from "@blueprintjs/core";
 import { createOverlayRender } from "roamjs-components";
 import {
-  createBlock,
   createPage,
-  deleteBlock,
   getPageUidByPageTitle,
   getRoamUrl,
-  getTextByBlockUid,
 } from "roam-client";
 
 const CreateGameDialog = ({ onClose }: { onClose: () => void }) => {

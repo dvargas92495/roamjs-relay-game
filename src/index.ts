@@ -4,7 +4,6 @@ import {
   createPage,
   getBlockUidAndTextIncludingText,
   getCurrentUserEmail,
-  getLinkedPageTitlesUnderUid,
   getShallowTreeByParentUid,
   getPageUidByPageTitle,
   getTreeByBlockUid,
@@ -16,7 +15,9 @@ import {
 import { render } from "./components/RelayGameButton";
 import { render as gameDialogRender } from "./components/CreateGameDialog";
 import { render as playerAlertRender } from "./components/CreatePlayerAlert";
+import { render as stopWatchRender } from "./components/Stopwatch";
 import { getSettingValueFromTree, renderWarningToast } from "roamjs-components";
+import { getPlayerName, isPageRelayGame } from "./util/helpers";
 
 const lobbyUid =
   getPageUidByPageTitle("Lobby") || createPage({ title: "Lobby" });
@@ -40,6 +41,12 @@ createButtonObserver({
   render,
 });
 
+createButtonObserver({
+  shortcut: "stopwatch",
+  attribute: "relay-stopwatch",
+  render: stopWatchRender,
+});
+
 window.roamAlphaAPI.ui.commandPalette.addCommand({
   label: "Create Relay Game",
   callback: () => gameDialogRender({}),
@@ -57,15 +64,9 @@ window.addEventListener("hashchange", (e) => {
   const { newURL } = e;
   const urlUid = newURL.match(/\/page\/(.*)$/)?.[1];
   if (urlUid) {
-    const links = getLinkedPageTitlesUnderUid(urlUid);
-    const isRelayGame = links.some((link) =>
-      getLinkedPageTitlesUnderUid(getPageUidByPageTitle(link)).some(
-        (s) => s === "Relay Game"
-      )
-    );
-    if (isRelayGame) {
+    if (isPageRelayGame(urlUid)) {
       const tree = getTreeByBlockUid(urlUid).children;
-      const displayName = getDisplayNameByEmail(userEmail) || userEmail;
+      const displayName = getPlayerName();
       const isCurrentPlayer =
         extractTag(
           getSettingValueFromTree({
