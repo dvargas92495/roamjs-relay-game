@@ -20,7 +20,8 @@
   "scripts": {
     "test": "echo 'No Tests'",
     "build": "roamjs-scripts build",
-    "dev": "roamjs-scripts dev"
+    "dev": "roamjs-scripts dev",
+    "lambdas": "roamjs-scripts lambdas"
   },
   "repository": {
     "type": "git",

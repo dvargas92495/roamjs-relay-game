@@ -20,7 +20,7 @@ export const handler: APIGatewayProxyHandler = (event) => {
         }),
         headers: {
           "Access-Control-Allow-Origin": "https://roamresearch.com",
-          "Access-Control-Allow-Methods": "POST",
+          "Access-Control-Allow-Methods": "GET",
         },
       };
     });

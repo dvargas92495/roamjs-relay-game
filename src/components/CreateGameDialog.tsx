@@ -5,6 +5,7 @@ import {
   Dialog,
   InputGroup,
   Intent,
+  Label,
   Spinner,
   SpinnerSize,
 } from "@blueprintjs/core";
@@ -13,6 +14,7 @@ import { createPage, getPageUidByPageTitle, getRoamUrl } from "roam-client";
 
 const CreateGameDialog = ({ onClose }: { onClose: () => void }) => {
   const [pageName, setPageName] = useState("");
+  const [source, setSource] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   return (
@@ -24,15 +26,26 @@ const CreateGameDialog = ({ onClose }: { onClose: () => void }) => {
       title={"Create Relay Game"}
     >
       <div className={Classes.DIALOG_BODY}>
-        <InputGroup
-          placeholder={"Enter name of game..."}
-          value={pageName}
-          onChange={(e) => setPageName((e.target as HTMLInputElement).value)}
-          autoFocus
-        />
-        <span style={{ color: "darkred" }}>{error}</span>
+        <Label>
+          Name
+          <InputGroup
+            placeholder={"Enter name of game..."}
+            value={pageName}
+            onChange={(e) => setPageName((e.target as HTMLInputElement).value)}
+            autoFocus
+          />
+        </Label>
+        <Label>
+          Source
+          <InputGroup
+            placeholder={"Where do the problems come from?"}
+            value={source}
+            onChange={(e) => setSource((e.target as HTMLInputElement).value)}
+          />
+        </Label>{" "}
       </div>
       <div className={Classes.DIALOG_FOOTER}>
+        <span style={{ color: "darkred" }}>{error}</span>
         <div className={Classes.DIALOG_FOOTER_ACTIONS}>
           {loading && <Spinner size={SpinnerSize.SMALL} />}
           <Button
@@ -53,6 +66,10 @@ const CreateGameDialog = ({ onClose }: { onClose: () => void }) => {
                     {
                       text: "#[[Relay Game]]",
                     },
+                    {
+                      text: "Source",
+                      children: [{ text: source }],
+                    },
                   ],
                 });
                 setTimeout(() => {
@@ -63,7 +80,7 @@ const CreateGameDialog = ({ onClose }: { onClose: () => void }) => {
               }, 1);
             }}
             intent={Intent.PRIMARY}
-            disabled={!pageName}
+            disabled={!pageName || !source}
           />
         </div>
       </div>
