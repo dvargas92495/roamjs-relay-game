@@ -43,6 +43,10 @@ provider "github" {
 
 module "roamjs_lambda" {
   source = "dvargas92495/lambda/roamjs"
+  providers = {
+    aws = aws
+    github = github
+  }
 
   name = "relay-game"
   lambdas = [
