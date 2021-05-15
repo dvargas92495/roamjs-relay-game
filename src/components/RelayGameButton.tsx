@@ -102,6 +102,7 @@ const RelayGameButton = ({ blockUid }: { blockUid: string }) => {
             setActiveGame(value);
             setInputSetting({ blockUid, value, key: "game", index: 1 });
           }}
+          ButtonProps={{ disabled: state === "ACTIVE" }}
         />
       </Label>
       {!!parameters.length && (
@@ -277,7 +278,8 @@ const RelayGameButton = ({ blockUid }: { blockUid: string }) => {
                           {
                             text: `[[${extractTag(
                               getSettingValuesFromTree({
-                                tree: getTreeByPageName(activeGame),
+                                tree:
+                                  getTreeByBlockUid(blockUid).children || [],
                                 key: "Players",
                               })[0]
                             )}]]`,
