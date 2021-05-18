@@ -55,7 +55,7 @@ const Stopwatch = ({ blockUid }: { blockUid: string }) => {
       new Date(
         getSettingValueFromTree({
           tree,
-          key: "Start time",
+          key: "{{stopwatch}}",
         })
       ),
     [tree]
@@ -112,11 +112,14 @@ const Stopwatch = ({ blockUid }: { blockUid: string }) => {
   const seconds = Math.floor(timeElapsed / 1000) % 60;
   const minutes = Math.floor(timeElapsed / 60000);
   useEffect(() => {
-    const currentPlayer = extractTag(getTextByBlockUid(currentPlayerUid));
-    const newCurrentPlayer =
-      players[Math.floor(minutes / timeLimit) % players.length];
-    if (newCurrentPlayer !== currentPlayer) {
-      updateBlock({ uid: currentPlayerUid, text: `[[${newCurrentPlayer}]]` });
+    if (minutes >= timeLimit) {
+      const currentPlayer = extractTag(getTextByBlockUid(currentPlayerUid));
+      const newCurrentPlayer =
+        players[players.findIndex((p) => extractTag(p) === currentPlayer) + 1];
+      updateBlock({
+        uid: currentPlayerUid,
+        text: newCurrentPlayer ? `[[${extractTag(newCurrentPlayer)}]]` : "",
+      });
       const thisUser = getPlayerName();
       if (thisUser !== currentPlayer) {
         window.location.assign(
@@ -130,7 +133,7 @@ const Stopwatch = ({ blockUid }: { blockUid: string }) => {
     }
   }, [timeLimit, minutes]);
   return (
-    <Card>
+    <Card style={{ padding: 4, width: "fit-content" }}>
       <h3>Timer</h3>
       <span>
         {`${minutes}`.padStart(2, "0")}:{`${seconds}`.padStart(2, "0")}.{millis}

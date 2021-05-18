@@ -24,12 +24,16 @@ import {
   createPage,
   deleteBlock,
   extractTag,
+  getFirstChildUidByBlockUid,
   getPageTitleReferencesByPageTitle,
   getPageTitlesReferencingBlockUid,
   getPageUidByPageTitle,
   getRoamUrl,
+  getShallowTreeByParentUid,
+  getTextByBlockUid,
   getTreeByBlockUid,
   getTreeByPageName,
+  updateBlock,
 } from "roam-client";
 import axios from "axios";
 import { getPlayerName } from "../util/helpers";
@@ -53,18 +57,20 @@ const RelayGameButton = ({ blockUid }: { blockUid: string }) => {
   const [timeLimit, setTimeLimit] = useState(
     getSettingIntFromTree({ tree, key: "time", defaultValue: 10 })
   );
-  const state: GameState = getPageTitlesReferencingBlockUid(blockUid).some(
-    (title) => title === gameLabel
-  )
-    ? (getSettingValueFromTree({
-        tree: getTreeByPageName(gameLabel),
-        key: "state",
-      }) as GameState)
-    : "NONE";
-  const [joinedUid, setJoinedUid] = useState(
-    (tree.find((t) => /players/i.test(t.text))?.children || []).find(
+  const [state, setState] = useState<GameState>(
+    getPageTitlesReferencingBlockUid(blockUid).some(
+      (title) => title === gameLabel
+    )
+      ? (getSettingValueFromTree({
+          tree: getTreeByPageName(gameLabel),
+          key: "state",
+        }) as GameState)
+      : "NONE"
+  );
+  const [hasJoined, setHasJoined] = useState(
+    (tree.find((t) => /players/i.test(t.text))?.children || []).some(
       (s) => extractTag(s.text) === displayName
-    )?.uid
+    )
   );
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -76,7 +82,13 @@ const RelayGameButton = ({ blockUid }: { blockUid: string }) => {
       }),
     [activeGame]
   );
-  const [parameterMap, setParameterMap] = useState<Record<string, string>>({});
+  const [parameterMap, setParameterMap] = useState<Record<string, string>>(
+    Object.fromEntries(
+      (tree.find((t) => /parameters/i.test(t.text))?.children || []).map(
+        (t) => [t.text, t.children[0]?.text || ""]
+      )
+    )
+  );
   return (
     <Card>
       <Label>
@@ -171,34 +183,45 @@ const RelayGameButton = ({ blockUid }: { blockUid: string }) => {
           marginTop: 16,
         }}
       >
-        {joinedUid ? (
-          <Button
-            text={"Leave"}
-            onClick={() => {
-              deleteBlock(joinedUid);
-              setJoinedUid("");
-            }}
-            intent={Intent.DANGER}
-          />
-        ) : (
-          <Button
-            text={"Join"}
-            onClick={() => {
-              setJoinedUid(
-                addInputSetting({
-                  blockUid,
-                  value: `[[${displayName}]]`,
-                  key: "Players",
-                })
-              );
-            }}
-            intent={Intent.SUCCESS}
-          />
-        )}
+        <Button
+          text={"Join"}
+          disabled={hasJoined}
+          onClick={() => {
+            setHasJoined(true);
+            addInputSetting({
+              blockUid,
+              value: `[[${displayName}]]`,
+              key: "Players",
+            });
+            const gameLabelUid = getPageUidByPageTitle(gameLabel);
+            const gameTree = getShallowTreeByParentUid(gameLabelUid);
+            const currentPlayerUid = gameTree.find((t) =>
+              /current player/i.test(t.text)
+            )?.uid;
+            if (currentPlayerUid) {
+              const childUid = getFirstChildUidByBlockUid(currentPlayerUid);
+              if (childUid && !getTextByBlockUid(childUid)) {
+                updateBlock({
+                  text: `[[${displayName}]]`,
+                  uid: childUid,
+                });
+                const timeUid = gameTree.find((t) =>
+                  /{{stopwatch}}/i.test(t.text)
+                )?.uid;
+                updateBlock({
+                  text: new Date().toISOString(),
+                  uid: getFirstChildUidByBlockUid(timeUid),
+                });
+                window.location.assign(getRoamUrl(gameLabelUid));
+              }
+            }
+          }}
+          intent={Intent.SUCCESS}
+        />
         <div style={{ display: "flex" }}>
           {loading && <Spinner size={SpinnerSize.SMALL} />}
           <Button
-            text={"Start Game"}
+            text={"Create Game"}
             disabled={!gameLabel || state === "ACTIVE" || loading}
             intent={Intent.PRIMARY}
             style={{ marginLeft: 16 }}
@@ -211,15 +234,6 @@ const RelayGameButton = ({ blockUid }: { blockUid: string }) => {
               }
               setLoading(true);
               setTimeout(() => {
-                if (!joinedUid) {
-                  setJoinedUid(
-                    addInputSetting({
-                      blockUid,
-                      value: `[[${displayName}]]`,
-                      key: "Players",
-                    })
-                  );
-                }
                 const gameTree = getTreeByPageName(activeGame);
                 const source = getSettingValueFromTree({
                   tree: gameTree,
@@ -250,7 +264,7 @@ const RelayGameButton = ({ blockUid }: { blockUid: string }) => {
                       )
                     )
                 ).then((problem) => {
-                  const pageUid = createPage({
+                  createPage({
                     title: gameLabel,
                     tree: [
                       {
@@ -269,20 +283,10 @@ const RelayGameButton = ({ blockUid }: { blockUid: string }) => {
                         children: [{ text: "ACTIVE" }],
                       },
                       {
-                        text: "Start Time",
-                        children: [{ text: new Date().toISOString() }],
-                      },
-                      {
                         text: "Current Player",
                         children: [
                           {
-                            text: `[[${extractTag(
-                              getSettingValuesFromTree({
-                                tree:
-                                  getTreeByBlockUid(blockUid).children || [],
-                                key: "Players",
-                              })[0]
-                            )}]]`,
+                            text: "",
                           },
                         ],
                       },
@@ -296,7 +300,7 @@ const RelayGameButton = ({ blockUid }: { blockUid: string }) => {
                       },
                       {
                         text: "{{stopwatch}}",
-                        children: [],
+                        children: [{ text: new Date().toISOString() }],
                       },
                       {
                         text: "Notes",
@@ -316,9 +320,8 @@ const RelayGameButton = ({ blockUid }: { blockUid: string }) => {
                       },
                     ],
                   });
-                  setTimeout(() => {
-                    window.location.assign(getRoamUrl(pageUid));
-                  }, 50);
+                  setState("ACTIVE");
+                  setLoading(false);
                 });
               }, 1);
             }}
