@@ -18,6 +18,8 @@ export const handler: APIGatewayProxyHandler = (event) => {
         body: JSON.stringify({
           problem: (REGEX.exec(r.data)?.[1] || "")
             .replace(/<(\/)?p>/g, "")
+            .replace(/<dfn title="[\w\s]*">/, '__')
+            .replace(/<\/dfn>/, '__')
             .trim(),
         }),
         headers: {

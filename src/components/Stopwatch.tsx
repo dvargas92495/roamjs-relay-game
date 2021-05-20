@@ -80,7 +80,7 @@ const Stopwatch = ({ blockUid }: { blockUid: string }) => {
   const players = useMemo(
     () =>
       getSettingValuesFromTree({
-        tree: launchTree,
+        tree,
         key: "Players",
       }),
     [launchTree]
@@ -113,21 +113,24 @@ const Stopwatch = ({ blockUid }: { blockUid: string }) => {
   const minutes = Math.floor(timeElapsed / 60000);
   useEffect(() => {
     if (minutes >= timeLimit) {
-      const currentPlayer = extractTag(getTextByBlockUid(currentPlayerUid));
-      const newCurrentPlayer =
-        players[players.findIndex((p) => extractTag(p) === currentPlayer) + 1];
-      updateBlock({
-        uid: currentPlayerUid,
-        text: newCurrentPlayer ? `[[${extractTag(newCurrentPlayer)}]]` : "",
-      });
+      const currentPlayerIndex = Number(getTextByBlockUid(currentPlayerUid));
+      const newCurrentPlayer = extractTag(
+        players[currentPlayerIndex + 1] || ""
+      );
+      if (currentPlayerIndex < players.length) {
+        updateBlock({
+          uid: currentPlayerUid,
+          text: `${currentPlayerIndex + 1}`,
+        });
+      }
       const thisUser = getPlayerName();
-      if (thisUser !== currentPlayer) {
+      if (thisUser !== newCurrentPlayer) {
         window.location.assign(
           getRoamUrlByPage(getPageTitleByBlockUid(launchUid))
         );
         renderWarningToast({
           id: "deny-game",
-          content: `Time's up! It's now ${newCurrentPlayer}'s turn to solve the problem!`,
+          content: `Time's up! It's now someone else's turn to solve the problem!`,
         });
       }
     }

@@ -16,7 +16,13 @@ import { render } from "./components/RelayGameButton";
 import { render as gameDialogRender } from "./components/CreateGameDialog";
 import { render as playerAlertRender } from "./components/CreatePlayerAlert";
 import { render as stopWatchRender } from "./components/Stopwatch";
-import { getSettingValueFromTree, renderWarningToast } from "roamjs-components";
+import { render as joinGameRender } from "./components/JoinGameButton";
+import {
+  getSettingIntFromTree,
+  getSettingValueFromTree,
+  getSettingValuesFromTree,
+  renderWarningToast,
+} from "roamjs-components";
 import { getPlayerName, isPageRelayGame } from "./util/helpers";
 
 const lobbyUid =
@@ -67,13 +73,13 @@ window.addEventListener("hashchange", (e) => {
     if (isPageRelayGame(urlUid)) {
       const tree = getTreeByBlockUid(urlUid).children;
       const displayName = getPlayerName();
-      const isCurrentPlayer =
-        extractTag(
-          getSettingValueFromTree({
-            tree,
-            key: "Current Player",
-          })
-        ) === displayName;
+      const currentPlayer = getSettingValuesFromTree({ tree, key: "players" })[
+        getSettingIntFromTree({
+          tree,
+          key: "Current Player",
+        })
+      ];
+      const isCurrentPlayer = extractTag(currentPlayer) === displayName;
       const isActive =
         getSettingValueFromTree({
           tree,
@@ -88,6 +94,22 @@ window.addEventListener("hashchange", (e) => {
           )} while the game is active and you're not the current player.`,
         });
       }
+    } else if (
+      getShallowTreeByParentUid(urlUid).some(
+        (t) => t.text === "#[[Relay Game]]"
+      )
+    ) {
+      Array.from(
+        document.getElementsByClassName("rm-title-arrow-wrapper")
+      ).forEach((d) => {
+        const parent = document.createElement("div");
+        d.appendChild(parent);
+        parent.style.marginRight = '32px';
+        joinGameRender({
+          p: parent,
+          name: d.querySelector(".rm-page__title").innerHTML,
+        });
+      });
     }
   }
 });

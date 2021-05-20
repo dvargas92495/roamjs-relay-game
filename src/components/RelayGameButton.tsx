@@ -24,6 +24,8 @@ import {
   createPage,
   deleteBlock,
   extractTag,
+  getChildrenLengthByPageUid,
+  getFirstChildTextByBlockUid,
   getFirstChildUidByBlockUid,
   getPageTitleReferencesByPageTitle,
   getPageTitlesReferencingBlockUid,
@@ -37,6 +39,7 @@ import {
 } from "roam-client";
 import axios from "axios";
 import { getPlayerName } from "../util/helpers";
+import JoinGameButton from "./JoinGameButton";
 
 type GameState = "ACTIVE" | "NONE" | "COMPLETE";
 
@@ -57,18 +60,24 @@ const RelayGameButton = ({ blockUid }: { blockUid: string }) => {
   const [timeLimit, setTimeLimit] = useState(
     getSettingIntFromTree({ tree, key: "time", defaultValue: 10 })
   );
+  const liveTree = useMemo(
+    () =>
+      getPageTitlesReferencingBlockUid(blockUid).some(
+        (title) => title === gameLabel
+      )
+        ? getTreeByPageName(gameLabel)
+        : [],
+    [gameLabel, blockUid]
+  );
   const [state, setState] = useState<GameState>(
-    getPageTitlesReferencingBlockUid(blockUid).some(
-      (title) => title === gameLabel
-    )
-      ? (getSettingValueFromTree({
-          tree: getTreeByPageName(gameLabel),
-          key: "state",
-        }) as GameState)
-      : "NONE"
+    getSettingValueFromTree({
+      tree: liveTree,
+      key: "state",
+      defaultValue: "NONE",
+    }) as GameState
   );
   const [hasJoined, setHasJoined] = useState(
-    (tree.find((t) => /players/i.test(t.text))?.children || []).some(
+    (liveTree.find((t) => /players/i.test(t.text))?.children || []).some(
       (s) => extractTag(s.text) === displayName
     )
   );
@@ -183,41 +192,7 @@ const RelayGameButton = ({ blockUid }: { blockUid: string }) => {
           marginTop: 16,
         }}
       >
-        <Button
-          text={"Join"}
-          disabled={hasJoined}
-          onClick={() => {
-            setHasJoined(true);
-            addInputSetting({
-              blockUid,
-              value: `[[${displayName}]]`,
-              key: "Players",
-            });
-            const gameLabelUid = getPageUidByPageTitle(gameLabel);
-            const gameTree = getShallowTreeByParentUid(gameLabelUid);
-            const currentPlayerUid = gameTree.find((t) =>
-              /current player/i.test(t.text)
-            )?.uid;
-            if (currentPlayerUid) {
-              const childUid = getFirstChildUidByBlockUid(currentPlayerUid);
-              if (childUid && !getTextByBlockUid(childUid)) {
-                updateBlock({
-                  text: `[[${displayName}]]`,
-                  uid: childUid,
-                });
-                const timeUid = gameTree.find((t) =>
-                  /{{stopwatch}}/i.test(t.text)
-                )?.uid;
-                updateBlock({
-                  text: new Date().toISOString(),
-                  uid: getFirstChildUidByBlockUid(timeUid),
-                });
-                window.location.assign(getRoamUrl(gameLabelUid));
-              }
-            }
-          }}
-          intent={Intent.SUCCESS}
-        />
+        <div>{state === "ACTIVE" && <JoinGameButton name={gameLabel} />}</div>
         <div style={{ display: "flex" }}>
           {loading && <Spinner size={SpinnerSize.SMALL} />}
           <Button
@@ -283,10 +258,13 @@ const RelayGameButton = ({ blockUid }: { blockUid: string }) => {
                         children: [{ text: "ACTIVE" }],
                       },
                       {
+                        text: "Players",
+                      },
+                      {
                         text: "Current Player",
                         children: [
                           {
-                            text: "",
+                            text: "0",
                           },
                         ],
                       },
