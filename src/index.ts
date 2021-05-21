@@ -11,6 +11,7 @@ import {
   getRoamUrl,
   getPageTitleByPageUid,
   extractTag,
+  getUids,
 } from "roam-client";
 import { render } from "./components/RelayGameButton";
 import { render as gameDialogRender } from "./components/CreateGameDialog";
@@ -66,6 +67,8 @@ if (!blocksWithEmail.length) {
   playerAlertRender({ email: userEmail });
 }
 
+const hiddenMetadata = ["players", "current player", "launched from", "state"];
+
 window.addEventListener("hashchange", (e) => {
   const { newURL } = e;
   const urlUid = newURL.match(/\/page\/(.*)$/)?.[1];
@@ -73,26 +76,43 @@ window.addEventListener("hashchange", (e) => {
     if (isPageRelayGame(urlUid)) {
       const tree = getTreeByBlockUid(urlUid).children;
       const displayName = getPlayerName();
-      const currentPlayer = getSettingValuesFromTree({ tree, key: "players" })[
-        getSettingIntFromTree({
-          tree,
-          key: "Current Player",
-        })
-      ];
+      const currentPlayer =
+        getSettingValuesFromTree({ tree, key: "players" })[
+          getSettingIntFromTree({
+            tree,
+            key: "Current Player",
+          })
+        ] || "";
       const isCurrentPlayer = extractTag(currentPlayer) === displayName;
       const isActive =
         getSettingValueFromTree({
           tree,
           key: "state",
         }) === "ACTIVE";
-      if (isActive && !isCurrentPlayer) {
-        window.location.assign(getRoamUrl());
-        renderWarningToast({
-          id: "deny-game",
-          content: `Not allowed to access Relay Game ${getPageTitleByPageUid(
-            urlUid
-          )} while the game is active and you're not the current player.`,
-        });
+      if (isActive) {
+        if (!isCurrentPlayer) {
+          window.location.assign(getRoamUrl());
+          renderWarningToast({
+            id: "deny-game",
+            content: `Not allowed to access Relay Game ${getPageTitleByPageUid(
+              urlUid
+            )} while the game is active and you're not the current player.`,
+          });
+        } else {
+          const hideUids = new Set(
+            tree
+              .filter((t) =>
+                hiddenMetadata.some((md) => new RegExp(md, "i").test(t.text))
+              )
+              .map(({ uid }) => uid)
+          );
+          Array.from(document.getElementsByClassName("roam-block"))
+            .map((d) => d as HTMLDivElement)
+            .filter((d) => hideUids.has(getUids(d).blockUid))
+            .map((d) => d.closest(".roam-block-container") as HTMLDivElement)
+            .filter((d) => !!d)
+            .forEach((d) => (d.style.display = "none"));
+        }
       }
     } else if (
       getShallowTreeByParentUid(urlUid).some(
@@ -104,7 +124,7 @@ window.addEventListener("hashchange", (e) => {
       ).forEach((d) => {
         const parent = document.createElement("div");
         d.appendChild(parent);
-        parent.style.marginRight = '32px';
+        parent.style.marginRight = "32px";
         joinGameRender({
           p: parent,
           name: d.querySelector(".rm-page__title").innerHTML,
