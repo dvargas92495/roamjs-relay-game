@@ -7,9 +7,11 @@ import React, {
 } from "react";
 import {
   BLOCK_REF_REGEX,
+  createPage,
   extractTag,
   getPageTitleByBlockUid,
   getPageUidByPageTitle,
+  getRoamUrl,
   getRoamUrlByPage,
   getTextByBlockUid,
   getTreeByBlockUid,
@@ -125,9 +127,22 @@ const Stopwatch = ({ blockUid }: { blockUid: string }) => {
       }
       const thisUser = getPlayerName();
       if (thisUser !== newCurrentPlayer) {
-        window.location.assign(
-          getRoamUrlByPage(getPageTitleByBlockUid(launchUid))
-        );
+        const postGameTitle = `Post Game/${page}`;
+        const postGameUid =
+          getPageUidByPageTitle(postGameTitle) ||
+          createPage({
+            title: postGameTitle,
+            tree: [
+              {
+                text: `Welcome to the Post Game discussion board for [[${page}]]. Use the space below to discuss strategies that would have been helpful for solving the game.`,
+              },
+            ],
+          });
+        setTimeout(() => {
+          window.location.assign(
+            getRoamUrl(postGameUid)
+          );
+        }, 50);
         renderWarningToast({
           id: "deny-game",
           content: `Time's up! It's now someone else's turn to solve the problem!`,

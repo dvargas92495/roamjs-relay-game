@@ -2,6 +2,7 @@ import { Button, Intent } from "@blueprintjs/core";
 import React, { useEffect, useMemo, useState } from "react";
 import ReactDOM from "react-dom";
 import {
+  extractTag,
   getFirstChildTextByBlockUid,
   getPageUidByPageTitle,
   getRoamUrl,
@@ -27,7 +28,7 @@ const JoinGameButton = ({ name }: { name: string }) => {
     [playersUid]
   );
   const [playerLength, setPlayerLength] = useState(players.length);
-  const [joinedIndex, setJoinedIndex] = useState(players.indexOf(displayName));
+  const [joinedIndex, setJoinedIndex] = useState(players.map(extractTag).indexOf(displayName));
   const currentPlayerUid = useMemo(
     () => shallowTree.find((t) => /current player/i.test(t.text))?.uid,
     [shallowTree]
@@ -37,9 +38,9 @@ const JoinGameButton = ({ name }: { name: string }) => {
   );
   useEffect(() => {
     const callback = (_: PullBlock, a: PullBlock) =>
-      setCurrentPlayerIndex(Number(a[":block/string"]));
+      a && setCurrentPlayerIndex(Number(a[":block/string"]));
     const playersCallback = (_: PullBlock, a: PullBlock) =>
-      setPlayerLength(a[":block/children"].length);
+      a && setPlayerLength(a[":block/children"].length);
     window.roamAlphaAPI.data.addPullWatch(
       "[:block/string]",
       `[:block/uid "${currentPlayerUid}"]`,
@@ -78,7 +79,7 @@ const JoinGameButton = ({ name }: { name: string }) => {
         addInputSetting({
           blockUid: pageUid,
           key: "players",
-          value: displayName,
+          value: `[[${displayName}]]`,
         });
         if (playerLength === currentPlayerIndex) {
           setInputSetting({

@@ -12,6 +12,8 @@ import {
   getPageTitleByPageUid,
   extractTag,
   getUids,
+  getRoamUrlByPage,
+  getCurrentPageUid,
 } from "roam-client";
 import { render } from "./components/RelayGameButton";
 import { render as gameDialogRender } from "./components/CreateGameDialog";
@@ -106,12 +108,17 @@ window.addEventListener("hashchange", (e) => {
               )
               .map(({ uid }) => uid)
           );
-          Array.from(document.getElementsByClassName("roam-block"))
-            .map((d) => d as HTMLDivElement)
-            .filter((d) => hideUids.has(getUids(d).blockUid))
-            .map((d) => d.closest(".roam-block-container") as HTMLDivElement)
-            .filter((d) => !!d)
-            .forEach((d) => (d.style.display = "none"));
+          setTimeout(() => {
+            Array.from(document.getElementsByClassName("roam-block"))
+              .map((d) => d as HTMLDivElement)
+              .filter((d) => hideUids.has(getUids(d).blockUid))
+              .map((d) => d.closest(".roam-block-container") as HTMLDivElement)
+              .filter((d) => !!d)
+              .forEach((d) => (d.style.display = "none"));
+            Array.from(document.getElementsByClassName("rm-reference-main"))
+              .map((d) => d as HTMLDivElement)
+              .forEach((d) => (d.style.display = "none"));
+          }, 50);
         }
       }
     } else if (
@@ -131,5 +138,11 @@ window.addEventListener("hashchange", (e) => {
         });
       });
     }
+  } else {
+    window.location.assign(getRoamUrlByPage("Relay Game"));
   }
 });
+
+if (!/\/page\//.test(window.location.hash)) {
+  window.location.assign(getRoamUrlByPage("Relay Game"));
+}

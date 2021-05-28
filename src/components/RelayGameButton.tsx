@@ -1,4 +1,4 @@
-import React, { Children, useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
   Card,
   Button,
@@ -11,7 +11,6 @@ import {
   Intent,
 } from "@blueprintjs/core";
 import {
-  addInputSetting,
   createComponentRender,
   getSettingIntFromTree,
   getSettingValueFromTree,
@@ -22,29 +21,18 @@ import {
 import {
   createBlock,
   createPage,
-  deleteBlock,
-  extractTag,
-  getChildrenLengthByPageUid,
-  getFirstChildTextByBlockUid,
-  getFirstChildUidByBlockUid,
   getPageTitleReferencesByPageTitle,
   getPageTitlesReferencingBlockUid,
   getPageUidByPageTitle,
-  getRoamUrl,
-  getShallowTreeByParentUid,
-  getTextByBlockUid,
   getTreeByBlockUid,
   getTreeByPageName,
-  updateBlock,
 } from "roam-client";
 import axios from "axios";
-import { getPlayerName } from "../util/helpers";
 import JoinGameButton from "./JoinGameButton";
 
 type GameState = "ACTIVE" | "NONE" | "COMPLETE";
 
 const RelayGameButton = ({ blockUid }: { blockUid: string }) => {
-  const displayName = useMemo(getPlayerName, []);
   const tree = getTreeByBlockUid(blockUid).children;
   const [gameLabel, setGameLabel] = useState(
     getSettingValueFromTree({ tree, key: "label" })
@@ -75,11 +63,6 @@ const RelayGameButton = ({ blockUid }: { blockUid: string }) => {
       key: "state",
       defaultValue: "NONE",
     }) as GameState
-  );
-  const [hasJoined, setHasJoined] = useState(
-    (liveTree.find((t) => /players/i.test(t.text))?.children || []).some(
-      (s) => extractTag(s.text) === displayName
-    )
   );
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -164,7 +147,7 @@ const RelayGameButton = ({ blockUid }: { blockUid: string }) => {
       )}
       <div
         onClick={() => setShowAdditionalOptions(!showAdditionalOptions)}
-        style={{ cursor: "pointer", color: "darkblue" }}
+        style={{ cursor: "pointer", color: "darkblue", userSelect: "none" }}
       >
         <Icon icon={showAdditionalOptions ? "caret-down" : "caret-right"} />{" "}
         {showAdditionalOptions ? "Hide" : "Show"} Additional Options
@@ -269,16 +252,16 @@ const RelayGameButton = ({ blockUid }: { blockUid: string }) => {
                         ],
                       },
                       {
+                        text: "{{stopwatch}}",
+                        children: [{ text: new Date().toISOString() }],
+                      },
+                      {
                         text: "Problem",
                         children: [
                           {
                             text: problem,
                           },
                         ],
-                      },
-                      {
-                        text: "{{stopwatch}}",
-                        children: [{ text: new Date().toISOString() }],
                       },
                       {
                         text: "Notes",
@@ -298,8 +281,10 @@ const RelayGameButton = ({ blockUid }: { blockUid: string }) => {
                       },
                     ],
                   });
-                  setState("ACTIVE");
-                  setLoading(false);
+                  setTimeout(() => {
+                    setState("ACTIVE");
+                    setLoading(false);
+                  }, 50);
                 });
               }, 1);
             }}
