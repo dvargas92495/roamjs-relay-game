@@ -104,7 +104,7 @@ const CreateGameDialog = ({ onClose }: { onClose: () => void }) => {
                   title: pageName,
                   tree: [
                     {
-                      text: "#[[Relay Game]]",
+                      text: `#[[${HOME}]]`,
                     },
                     {
                       text: "Source",

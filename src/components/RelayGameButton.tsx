@@ -29,6 +29,7 @@ import {
 } from "roam-client";
 import axios from "axios";
 import JoinGameButton from "./JoinGameButton";
+import { HOME } from "../util/helpers";
 
 type GameState = "ACTIVE" | "NONE" | "COMPLETE";
 
@@ -38,7 +39,7 @@ const RelayGameButton = ({ blockUid }: { blockUid: string }) => {
     getSettingValueFromTree({ tree, key: "label" })
   );
   const items = useMemo(
-    () => getPageTitleReferencesByPageTitle("Relay Game"),
+    () => getPageTitleReferencesByPageTitle(HOME),
     []
   );
   const [activeGame, setActiveGame] = useState(
@@ -216,7 +217,7 @@ const RelayGameButton = ({ blockUid }: { blockUid: string }) => {
                       setTimeout(
                         () =>
                           resolve(
-                            "Add a source to this relay game to populate the problem"
+                            `Add a source to this ${HOME} to populate the problem`
                           ),
                         500
                       )

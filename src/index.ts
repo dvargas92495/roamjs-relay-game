@@ -26,7 +26,7 @@ import {
   getSettingValuesFromTree,
   renderWarningToast,
 } from "roamjs-components";
-import { getPlayerName, isPageRelayGame } from "./util/helpers";
+import { getPlayerName, HOME, isPageRelayGame } from "./util/helpers";
 
 const lobbyUid =
   getPageUidByPageTitle("Lobby") || createPage({ title: "Lobby" });
@@ -34,8 +34,8 @@ setTimeout(() => {
   const tree = getShallowTreeByParentUid(lobbyUid);
   const existingText = new Set(tree.map((t) => t.text));
   const queries = [
-    `{{[[query]]: {and: [[Relay Game]] [[Active]]}}}`,
-    `{{[[query]]: {and: [[Relay Game]] [[Inactive]]}}}`,
+    `{{[[query]]: {and: [[${HOME}]] [[Active]]}}}`,
+    `{{[[query]]: {and: [[${HOME}]] [[Inactive]]}}}`,
   ];
   queries
     .filter((q) => existingText.has(q))
@@ -70,6 +70,13 @@ if (!blocksWithEmail.length) {
 }
 
 const hiddenMetadata = ["players", "current player", "launched from", "state"];
+
+const redirectHome = () => {
+  const uid = getPageUidByPageTitle(HOME);
+  if (uid) {
+    window.location.assign(getRoamUrl(uid));
+  }
+};
 
 window.addEventListener("hashchange", (e) => {
   const { newURL } = e;
@@ -123,7 +130,7 @@ window.addEventListener("hashchange", (e) => {
       }
     } else if (
       getShallowTreeByParentUid(urlUid).some(
-        (t) => t.text === "#[[Relay Game]]"
+        (t) => t.text === `#[[${HOME}]]`
       )
     ) {
       Array.from(
@@ -139,10 +146,10 @@ window.addEventListener("hashchange", (e) => {
       });
     }
   } else {
-    window.location.assign(getRoamUrlByPage("Relay Game"));
+    redirectHome();
   }
 });
 
 if (!/\/page\//.test(window.location.hash)) {
-  window.location.assign(getRoamUrlByPage("Relay Game"));
+  redirectHome();
 }
