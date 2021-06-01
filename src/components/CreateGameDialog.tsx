@@ -15,6 +15,7 @@ import {
   getPageUidByPageTitle,
   getRoamUrl,
 } from "roam-client";
+import { HOME } from "../util/helpers";
 
 const CreateGameDialog = ({ onClose }: { onClose: () => void }) => {
   const [pageName, setPageName] = useState("");
