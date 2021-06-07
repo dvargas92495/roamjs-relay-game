@@ -110,9 +110,9 @@ const Stopwatch = ({ blockUid }: { blockUid: string }) => {
     timeoutCallback();
     return () => clearTimeout(timeoutRef.current);
   }, [timeoutRef, timeoutCallback]);
-  const millis = timeElapsed % 1000;
-  const seconds = Math.floor(timeElapsed / 1000) % 60;
-  const minutes = Math.floor(timeElapsed / 60000);
+  const millis = 1000 - (timeElapsed % 1000);
+  const seconds = 60 - Math.ceil(timeElapsed / 1000) % 60;
+  const minutes = timeLimit - Math.ceil(timeElapsed / 60000);
   useEffect(() => {
     if (minutes >= timeLimit) {
       const currentPlayerIndex = Number(getTextByBlockUid(currentPlayerUid));
