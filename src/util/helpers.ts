@@ -6,7 +6,7 @@ import {
   getPageUidByPageTitle,
 } from "roam-client";
 
-export const HOME = 'Relay';
+export const HOME = "Relay";
 
 export const isPageRelayGame = (uid: string) => {
   const links = getLinkedPageTitlesUnderUid(uid);
@@ -19,3 +19,5 @@ export const isPageRelayGame = (uid: string) => {
 
 export const getPlayerName = () =>
   getDisplayNameByUid(getCurrentUserUid()) || getCurrentUserEmail();
+
+export const HIDE_CLASSNAME = ".roamjs-relay-hide";

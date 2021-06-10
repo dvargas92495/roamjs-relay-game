@@ -7,26 +7,34 @@ import {
   getShallowTreeByParentUid,
   getPageUidByPageTitle,
   getTreeByBlockUid,
-  getDisplayNameByEmail,
   getRoamUrl,
   getPageTitleByPageUid,
   extractTag,
-  getUids,
-  getRoamUrlByPage,
-  getCurrentPageUid,
+  addStyle,
+  getLinkedPageTitlesUnderUid,
 } from "roam-client";
 import { render } from "./components/RelayGameButton";
 import { render as gameDialogRender } from "./components/CreateGameDialog";
 import { render as playerAlertRender } from "./components/CreatePlayerAlert";
 import { render as stopWatchRender } from "./components/Stopwatch";
 import { render as joinGameRender } from "./components/JoinGameButton";
+import { render as postGameRender } from "./components/PostGameButton";
 import {
   getSettingIntFromTree,
   getSettingValueFromTree,
   getSettingValuesFromTree,
   renderWarningToast,
 } from "roamjs-components";
-import { getPlayerName, HOME, isPageRelayGame } from "./util/helpers";
+import {
+  getPlayerName,
+  HIDE_CLASSNAME,
+  HOME,
+  isPageRelayGame,
+} from "./util/helpers";
+
+addStyle(`${HIDE_CLASSNAME} {
+  display: none;
+}`);
 
 const lobbyUid =
   getPageUidByPageTitle("Lobby") || createPage({ title: "Lobby" });
@@ -78,8 +86,22 @@ const redirectHome = () => {
   }
 };
 
-window.addEventListener("hashchange", (e) => {
-  const { newURL } = e;
+const POST_GAME_REGEX = /^Post Game\/(.*)$/;
+const getPostGameType = (uid: string) => {
+  const gameTitle = POST_GAME_REGEX.exec(getPageTitleByPageUid(uid))?.[1];
+  if (gameTitle) {
+    const titleUid = getPageUidByPageTitle(gameTitle);
+    const links = getLinkedPageTitlesUnderUid(titleUid);
+    return links
+      .map((link) => ({ link, linkUid: getPageUidByPageTitle(link) }))
+      .find(({ linkUid }) =>
+        getLinkedPageTitlesUnderUid(linkUid).some((s) => s === HOME)
+      );
+  }
+  return undefined;
+};
+
+const hashChangeListener = (newURL: string) => {
   const urlUid = newURL.match(/\/page\/(.*)$/)?.[1];
   if (urlUid) {
     if (isPageRelayGame(urlUid)) {
@@ -107,49 +129,45 @@ window.addEventListener("hashchange", (e) => {
               urlUid
             )} while the game is active and you're not the current player.`,
           });
-        } else {
-          const hideUids = new Set(
-            tree
-              .filter((t) =>
-                hiddenMetadata.some((md) => new RegExp(md, "i").test(t.text))
-              )
-              .map(({ uid }) => uid)
-          );
-          setTimeout(() => {
-            Array.from(document.getElementsByClassName("roam-block"))
-              .map((d) => d as HTMLDivElement)
-              .filter((d) => hideUids.has(getUids(d).blockUid))
-              .map((d) => d.closest(".roam-block-container") as HTMLDivElement)
-              .filter((d) => !!d)
-              .forEach((d) => (d.style.display = "none"));
-            Array.from(document.getElementsByClassName("rm-reference-main"))
-              .map((d) => d as HTMLDivElement)
-              .forEach((d) => (d.style.display = "none"));
-          }, 50);
         }
       }
+      return;
     } else if (
-      getShallowTreeByParentUid(urlUid).some(
-        (t) => t.text === `#[[${HOME}]]`
+      getShallowTreeByParentUid(urlUid).some((t) =>
+        t.text.includes(`#[[${HOME}]]`)
       )
     ) {
-      Array.from(
-        document.getElementsByClassName("rm-title-arrow-wrapper")
-      ).forEach((d) => {
-        const parent = document.createElement("div");
-        d.appendChild(parent);
-        parent.style.marginRight = "32px";
-        joinGameRender({
-          p: parent,
-          name: d.querySelector(".rm-page__title").innerHTML,
+      setTimeout(() => {
+        Array.from(
+          document.getElementsByClassName("rm-title-arrow-wrapper")
+        ).forEach((d) => {
+          const parent = document.createElement("div");
+          d.appendChild(parent);
+          (parent.previousElementSibling as HTMLDivElement).style.marginRight =
+            "32px";
+          joinGameRender({
+            p: parent,
+            name: d.querySelector(".rm-page__title").innerHTML,
+          });
         });
-      });
+      }, 100);
+      return;
+    }
+    const gameType = getPostGameType(urlUid);
+    if (gameType) {
+      setTimeout(() => {
+        const mainChildren = document.querySelector(
+          ".roam-article>div>.rm-block-children"
+        );
+        const div = document.createElement("div");
+        postGameRender({ d: div, title: gameType.link, uid: gameType.linkUid });
+        mainChildren.parentElement.appendChild(div);
+      }, 100);
     }
   } else {
     redirectHome();
   }
-});
+};
 
-if (!/\/page\//.test(window.location.hash)) {
-  redirectHome();
-}
+window.addEventListener("hashchange", (e) => hashChangeListener(e.newURL));
+hashChangeListener(window.location.href);

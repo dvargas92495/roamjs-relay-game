@@ -9,7 +9,11 @@ import {
   getShallowTreeByParentUid,
   PullBlock,
 } from "roam-client";
-import { addInputSetting, setInputSetting } from "roamjs-components";
+import {
+  addInputSetting,
+  setInputSetting,
+  toFlexRegex,
+} from "roamjs-components";
 import { getPlayerName } from "../util/helpers";
 
 const JoinGameButton = ({ name }: { name: string }) => {
@@ -20,7 +24,7 @@ const JoinGameButton = ({ name }: { name: string }) => {
     [pageUid]
   );
   const playersUid = useMemo(
-    () => shallowTree.find((t) => /players/i.test(t.text))?.uid,
+    () => shallowTree.find((t) => toFlexRegex("players").test(t.text))?.uid,
     [shallowTree]
   );
   const players = useMemo(
@@ -28,9 +32,11 @@ const JoinGameButton = ({ name }: { name: string }) => {
     [playersUid]
   );
   const [playerLength, setPlayerLength] = useState(players.length);
-  const [joinedIndex, setJoinedIndex] = useState(players.map(extractTag).indexOf(displayName));
+  const [joinedIndex, setJoinedIndex] = useState(
+    players.map(extractTag).indexOf(displayName)
+  );
   const currentPlayerUid = useMemo(
-    () => shallowTree.find((t) => /current player/i.test(t.text))?.uid,
+    () => shallowTree.find((t) => toFlexRegex('current player').test(t.text))?.uid,
     [shallowTree]
   );
   const [currentPlayerIndex, setCurrentPlayerIndex] = useState(

@@ -9,6 +9,7 @@ import {
   BLOCK_REF_REGEX,
   createPage,
   extractTag,
+  getCurrentPageUid,
   getPageTitleByBlockUid,
   getPageUidByPageTitle,
   getRoamUrl,
@@ -24,6 +25,7 @@ import {
   getSettingValueFromTree,
   getSettingValuesFromTree,
   renderWarningToast,
+  toFlexRegex,
 } from "roamjs-components";
 import differenceInMilliseconds from "date-fns/differenceInMilliseconds";
 import { Card } from "@blueprintjs/core";
@@ -64,8 +66,8 @@ const Stopwatch = ({ blockUid }: { blockUid: string }) => {
   );
   const currentPlayerUid = useMemo(
     () =>
-      (tree.find((t) => /current player/i.test(t.text))?.children || [])?.[0]
-        ?.uid,
+      (tree.find((t) => toFlexRegex("current player").test(t.text))?.children ||
+        [])?.[0]?.uid,
     []
   );
   const launchUid = useMemo(
@@ -111,10 +113,10 @@ const Stopwatch = ({ blockUid }: { blockUid: string }) => {
     return () => clearTimeout(timeoutRef.current);
   }, [timeoutRef, timeoutCallback]);
   const millis = 1000 - (timeElapsed % 1000);
-  const seconds = 60 - Math.ceil(timeElapsed / 1000) % 60;
+  const seconds = 60 - (Math.ceil(timeElapsed / 1000) % 60);
   const minutes = timeLimit - Math.ceil(timeElapsed / 60000);
   useEffect(() => {
-    if (minutes >= timeLimit) {
+    if (timeElapsed >= timeLimit * 1000 * 60 && getCurrentPageUid() === pageUid) {
       const currentPlayerIndex = Number(getTextByBlockUid(currentPlayerUid));
       const newCurrentPlayer = extractTag(
         players[currentPlayerIndex + 1] || ""
@@ -139,9 +141,7 @@ const Stopwatch = ({ blockUid }: { blockUid: string }) => {
             ],
           });
         setTimeout(() => {
-          window.location.assign(
-            getRoamUrl(postGameUid)
-          );
+          window.location.assign(getRoamUrl(postGameUid));
         }, 50);
         renderWarningToast({
           id: "deny-game",
@@ -149,7 +149,7 @@ const Stopwatch = ({ blockUid }: { blockUid: string }) => {
         });
       }
     }
-  }, [timeLimit, minutes]);
+  }, [timeLimit, timeElapsed, pageUid]);
   return (
     <Card style={{ padding: 4, width: "fit-content" }}>
       <h3>Timer</h3>

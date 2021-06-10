@@ -1,7 +1,12 @@
 import React from "react";
 import { Alert, Classes } from "@blueprintjs/core";
 import { createOverlayRender } from "roamjs-components";
-import { createPage, getDisplayNameByEmail, getRoamUrlByPage } from "roam-client";
+import {
+  createPage,
+  getDisplayNameByEmail,
+  getRoamUrlByPage,
+} from "roam-client";
+import { HOME } from "../util/helpers";
 
 const CreatePlayerAlert = ({
   onClose,
@@ -27,7 +32,7 @@ const CreatePlayerAlert = ({
           ],
         });
         setTimeout(() => {
-          window.location.assign(getRoamUrlByPage(pageName));
+          window.location.assign(getRoamUrlByPage(HOME));
           onClose();
         }, 50);
       }}
@@ -40,7 +45,7 @@ const CreatePlayerAlert = ({
   );
 };
 
-export const render = createOverlayRender<{email:string}>(
+export const render = createOverlayRender<{ email: string }>(
   "create-relay-player",
   CreatePlayerAlert
 );

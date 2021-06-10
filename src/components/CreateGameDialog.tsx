@@ -10,15 +10,12 @@ import {
   SpinnerSize,
 } from "@blueprintjs/core";
 import { createOverlayRender } from "roamjs-components";
-import {
-  createPage,
-  getPageUidByPageTitle,
-  getRoamUrl,
-} from "roam-client";
-import { HOME } from "../util/helpers";
+import { createPage, getPageUidByPageTitle, getRoamUrl } from "roam-client";
+import { HIDE_CLASSNAME, HOME } from "../util/helpers";
 
 const CreateGameDialog = ({ onClose }: { onClose: () => void }) => {
   const [pageName, setPageName] = useState("");
+  const [description, setDescription] = useState("");
   const [source, setSource] = useState("");
   const [newParameter, setNewParameter] = useState("");
   const [parameters, setParameters] = useState<string[]>([]);
@@ -40,6 +37,16 @@ const CreateGameDialog = ({ onClose }: { onClose: () => void }) => {
             value={pageName}
             onChange={(e) => setPageName((e.target as HTMLInputElement).value)}
             autoFocus
+          />
+        </Label>
+        <Label>
+          Description
+          <InputGroup
+            placeholder={"Enter an overview for the problem type..."}
+            value={description}
+            onChange={(e) =>
+              setDescription((e.target as HTMLInputElement).value)
+            }
           />
         </Label>
         <Label>
@@ -105,16 +112,19 @@ const CreateGameDialog = ({ onClose }: { onClose: () => void }) => {
                   title: pageName,
                   tree: [
                     {
-                      text: `#[[${HOME}]]`,
+                      text: `#[[${HOME}]] #${HIDE_CLASSNAME}`,
                     },
                     {
-                      text: "Source",
+                      text: `Source #${HIDE_CLASSNAME}`,
                       children: [{ text: source }],
                     },
                     {
-                      text: "Parameters",
-                      children: parameters.map(text => ({text})),
-                    }
+                      text: `Parameters #${HIDE_CLASSNAME}`,
+                      children: parameters.map((text) => ({ text })),
+                    },
+                    {
+                      text: description,
+                    },
                   ],
                 });
                 setTimeout(() => {
@@ -125,7 +135,7 @@ const CreateGameDialog = ({ onClose }: { onClose: () => void }) => {
               }, 1);
             }}
             intent={Intent.PRIMARY}
-            disabled={!pageName || !source}
+            disabled={!pageName || !description}
           />
         </div>
       </div>

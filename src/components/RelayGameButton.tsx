@@ -17,6 +17,7 @@ import {
   getSettingValuesFromTree,
   MenuItemSelect,
   setInputSetting,
+  toFlexRegex,
 } from "roamjs-components";
 import {
   createBlock,
@@ -29,7 +30,7 @@ import {
 } from "roam-client";
 import axios from "axios";
 import JoinGameButton from "./JoinGameButton";
-import { HOME } from "../util/helpers";
+import { HIDE_CLASSNAME, HOME } from "../util/helpers";
 
 type GameState = "ACTIVE" | "NONE" | "COMPLETE";
 
@@ -38,10 +39,7 @@ const RelayGameButton = ({ blockUid }: { blockUid: string }) => {
   const [gameLabel, setGameLabel] = useState(
     getSettingValueFromTree({ tree, key: "label" })
   );
-  const items = useMemo(
-    () => getPageTitleReferencesByPageTitle(HOME),
-    []
-  );
+  const items = useMemo(() => getPageTitleReferencesByPageTitle(HOME), []);
   const [activeGame, setActiveGame] = useState(
     getSettingValueFromTree({ tree, key: "game", defaultValue: items[0] })
   );
@@ -77,11 +75,19 @@ const RelayGameButton = ({ blockUid }: { blockUid: string }) => {
   );
   const [parameterMap, setParameterMap] = useState<Record<string, string>>(
     Object.fromEntries(
-      (tree.find((t) => /parameters/i.test(t.text))?.children || []).map(
-        (t) => [t.text, t.children[0]?.text || ""]
-      )
+      (
+        tree.find((t) => toFlexRegex("parameters").test(t.text))?.children || []
+      ).map((t) => [t.text, t.children[0]?.text || ""])
     )
   );
+  const source = useMemo(() => {
+    const gameTree = getTreeByPageName(activeGame);
+    return getSettingValueFromTree({
+      tree: gameTree,
+      key: "Source",
+    });
+  }, [activeGame]);
+  const [customProblem, setCustomProblem] = useState("");
   return (
     <Card>
       <Label>
@@ -110,6 +116,21 @@ const RelayGameButton = ({ blockUid }: { blockUid: string }) => {
           ButtonProps={{ disabled: state === "ACTIVE" }}
         />
       </Label>
+      {!source && (
+        <Label>
+          Problem
+          <InputGroup
+            value={customProblem}
+            disabled={state === "ACTIVE"}
+            onChange={(e) => {
+              setError("");
+              const value = (e.target as HTMLInputElement).value;
+              setCustomProblem(value);
+              setInputSetting({ blockUid, value, key: "problem" });
+            }}
+          />
+        </Label>
+      )}
       {!!parameters.length && (
         <Label>
           Game Parameters{" "}
@@ -123,7 +144,7 @@ const RelayGameButton = ({ blockUid }: { blockUid: string }) => {
                 onChange={(e) => {
                   const parentUid =
                     getTreeByBlockUid(blockUid).children.find((t) =>
-                      /parameters/i.test(t.text)
+                      toFlexRegex("parameters").test(t.text)
                     )?.uid ||
                     createBlock({
                       node: { text: "Parameters" },
@@ -193,11 +214,6 @@ const RelayGameButton = ({ blockUid }: { blockUid: string }) => {
               }
               setLoading(true);
               setTimeout(() => {
-                const gameTree = getTreeByPageName(activeGame);
-                const source = getSettingValueFromTree({
-                  tree: gameTree,
-                  key: "Source",
-                });
                 (source
                   ? axios
                       .get(
@@ -213,24 +229,16 @@ const RelayGameButton = ({ blockUid }: { blockUid: string }) => {
                       .then(
                         (r) => r.data.problem || ("No Problem Found" as string)
                       )
-                  : new Promise((resolve) =>
-                      setTimeout(
-                        () =>
-                          resolve(
-                            `Add a source to this ${HOME} to populate the problem`
-                          ),
-                        500
-                      )
-                    )
+                  : Promise.resolve(customProblem)
                 ).then((problem) => {
                   createPage({
                     title: gameLabel,
                     tree: [
                       {
-                        text: `#[[${activeGame}]]`,
+                        text: `#[[${activeGame}]] #${HIDE_CLASSNAME}`,
                       },
                       {
-                        text: "Launched From",
+                        text: `Launched From #${HIDE_CLASSNAME}`,
                         children: [
                           {
                             text: `((${blockUid}))`,
@@ -238,14 +246,14 @@ const RelayGameButton = ({ blockUid }: { blockUid: string }) => {
                         ],
                       },
                       {
-                        text: "State",
+                        text: `State #${HIDE_CLASSNAME}`,
                         children: [{ text: "ACTIVE" }],
                       },
                       {
-                        text: "Players",
+                        text: `Players #${HIDE_CLASSNAME}`,
                       },
                       {
-                        text: "Current Player",
+                        text: `Current Player #${HIDE_CLASSNAME}`,
                         children: [
                           {
                             text: "0",
