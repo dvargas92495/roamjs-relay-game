@@ -77,8 +77,6 @@ if (!blocksWithEmail.length) {
   playerAlertRender({ email: userEmail });
 }
 
-const hiddenMetadata = ["players", "current player", "launched from", "state"];
-
 const redirectHome = () => {
   const uid = getPageUidByPageTitle(HOME);
   if (uid) {
@@ -160,9 +158,12 @@ const hashChangeListener = (newURL: string) => {
           ".roam-article>div>.rm-block-children"
         );
         const div = document.createElement("div");
+        div.style.marginTop = '64px';
         postGameRender({ d: div, title: gameType.link, uid: gameType.linkUid });
         mainChildren.parentElement.appendChild(div);
       }, 100);
+    } else if (getPageTitleByPageUid(urlUid) === "roam/js") {
+      redirectHome();
     }
   } else {
     redirectHome();
@@ -171,3 +172,27 @@ const hashChangeListener = (newURL: string) => {
 
 window.addEventListener("hashchange", (e) => hashChangeListener(e.newURL));
 hashChangeListener(window.location.href);
+
+/*
+Run this to hack the home page message to a bunch of daily note pages
+declare global {
+  interface Window {
+    toRoamDate: typeof toRoamDate;
+    toRoamDateUid: typeof toRoamDateUid;
+  }
+}
+window.toRoamDate = toRoamDate;
+window.toRoamDateUid = toRoamDateUid;
+const today = new Date();
+for (let i = 0; i < 100; i++) {
+  today.setDate(today.getDate() + 1);
+  const uid = window.toRoamDateUid(today);
+  window.roamAlphaAPI.createPage({
+    page: { title: window.toRoamDate(today), uid },
+  });
+  window.roamAlphaAPI.createBlock({
+    location: { "parent-uid": uid, order: 0 },
+    block: { string: "{{embed:((o8Rj6wDqk))}}" },
+  });
+}
+*/

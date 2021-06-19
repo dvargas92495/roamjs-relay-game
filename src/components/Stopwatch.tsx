@@ -7,13 +7,14 @@ import React, {
 } from "react";
 import {
   BLOCK_REF_REGEX,
+  createBlock,
   createPage,
   extractTag,
   getCurrentPageUid,
   getPageTitleByBlockUid,
   getPageUidByPageTitle,
   getRoamUrl,
-  getRoamUrlByPage,
+  getShallowTreeByParentUid,
   getTextByBlockUid,
   getTreeByBlockUid,
   getTreeByPageName,
@@ -29,7 +30,11 @@ import {
 } from "roamjs-components";
 import differenceInMilliseconds from "date-fns/differenceInMilliseconds";
 import { Card } from "@blueprintjs/core";
-import { getPlayerName, isPageRelayGame } from "../util/helpers";
+import {
+  getPlayerName,
+  HIDE_CLASSNAME,
+  isPageRelayGame,
+} from "../util/helpers";
 
 const Stopwatch = ({ blockUid }: { blockUid: string }) => {
   const page = useMemo(() => getPageTitleByBlockUid(blockUid), [blockUid]);
@@ -115,8 +120,9 @@ const Stopwatch = ({ blockUid }: { blockUid: string }) => {
   const millis = 1000 - (timeElapsed % 1000);
   const seconds = 60 - (Math.ceil(timeElapsed / 1000) % 60);
   const minutes = timeLimit - Math.ceil(timeElapsed / 60000);
+  const timesUp = timeElapsed >= timeLimit * 1000 * 60;
   useEffect(() => {
-    if (timeElapsed >= timeLimit * 1000 * 60 && getCurrentPageUid() === pageUid) {
+    if (timesUp && getCurrentPageUid() === pageUid) {
       const currentPlayerIndex = Number(getTextByBlockUid(currentPlayerUid));
       const newCurrentPlayer = extractTag(
         players[currentPlayerIndex + 1] || ""
@@ -138,10 +144,29 @@ const Stopwatch = ({ blockUid }: { blockUid: string }) => {
               {
                 text: `Welcome to the Post Game discussion board for [[${page}]]. Use the space below to discuss strategies that would have been helpful for solving the game.`,
               },
+              {
+                text: `Version Control #${HIDE_CLASSNAME}`,
+              },
             ],
           });
         setTimeout(() => {
           window.location.assign(getRoamUrl(postGameUid));
+          setTimeout(() => {
+            const vcUid = getShallowTreeByParentUid(postGameUid).find((t) =>
+              toFlexRegex("Version Control").test(t.text)
+            )?.uid;
+            const notesUid = tree.find((t) =>
+              toFlexRegex("notes").test(t.text)
+            )?.uid;
+            if (vcUid && notesUid) {
+              const node = getTreeByBlockUid(notesUid);
+              node.text = thisUser;
+              createBlock({
+                parentUid: vcUid,
+                node,
+              });
+            }
+          }, 1);
         }, 50);
         renderWarningToast({
           id: "deny-game",
@@ -149,12 +174,14 @@ const Stopwatch = ({ blockUid }: { blockUid: string }) => {
         });
       }
     }
-  }, [timeLimit, timeElapsed, pageUid]);
+  }, [timesUp, pageUid]);
   return (
     <Card style={{ padding: 4, width: "fit-content" }}>
       <h3>Timer</h3>
       <span>
-        {`${minutes}`.padStart(2, "0")}:{`${seconds}`.padStart(2, "0")}.{millis}
+        {timesUp ? "00" : `${minutes}`.padStart(2, "0")}:
+        {timesUp || seconds === 60 ? "00" : `${seconds}`.padStart(2, "0")}.
+        {timesUp || millis === 1000 ? "000" : millis}
       </span>
     </Card>
   );
